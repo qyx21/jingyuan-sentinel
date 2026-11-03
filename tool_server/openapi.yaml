@@ -1,0 +1,198 @@
+openapi: 3.0.0
+info:
+  title: 净源哨兵 Tool Server
+  description: |
+    净源哨兵 4.0 超级智能体工具服务。
+    提供统计检测、数据清洗、二次验证等安全工具，
+    供 Dify Agent 通过 OpenAPI 规范自动发现和调用。
+  version: 4.0.0
+servers:
+  - url: http://127.0.0.1:5050
+    description: 本地工具服务器
+
+paths:
+  /health:
+    get:
+      summary: 健康检查
+      operationId: health_check
+      responses:
+        '200':
+          description: 服务正常运行
+
+  /tools/unicode-scan:
+    post:
+      summary: Unicode 同形异义字扫描
+      description: |
+        对单条文本执行 Unicode 脚本一致性扫描，
+        检测同形异义字攻击、零宽字符隐藏、双向文本欺骗等。
+      operationId: unicode_scan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - data
+              properties:
+                data:
+                  type: string
+                  description: 待扫描的文本内容
+      responses:
+        '200':
+          description: 扫描结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mixed_script_count:
+                    type: integer
+                  zero_width_count:
+                    type: integer
+                  bidi_control_count:
+                    type: integer
+                  fullwidth_count:
+                    type: integer
+                  risk_score:
+                    type: number
+                  details:
+                    type: array
+                    items:
+                      type: string
+
+  /tools/trigger-prob:
+    post:
+      summary: 触发词条件概率分析
+      description: |
+        分析数据集中稀有词与特定标签的条件概率，
+        检测时间分散低剂量投毒攻击。
+      operationId: trigger_prob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dataset
+              properties:
+                dataset:
+                  type: array
+                  description: 数据集，每项含 text 和 label 字段
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: string
+                      label:
+                        type: string
+      responses:
+        '200':
+          description: 触发词分析结果
+
+  /tools/outlier-detect:
+    post:
+      summary: TF-IDF 批次离群检测
+      description: |
+        对同批次训练数据做 TF-IDF 向量化，
+        检测在语义空间中偏离正常分布的离群样本。
+      operationId: outlier_detect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dataset
+              properties:
+                dataset:
+                  type: array
+                  description: 文本数组
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: 离群检测结果
+
+  /tools/full-scan:
+    post:
+      summary: 一键全量统计扫描
+      description: |
+        聚合执行 Unicode 扫描 + 触发词分析 + 离群检测，
+        输出综合统计异常报告。是 Agent 收到数据后的首选工具。
+      operationId: full_scan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dataset
+              properties:
+                dataset:
+                  type: array
+                  description: 数据集，每项为文本字符串或含 text/label 的对象
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: 全量扫描结果，含聚合风险分和可疑样本索引
+
+  /tools/clean-data:
+    post:
+      summary: 自动剔除投毒样本
+      description: |
+        根据指定的样本索引从数据集中剔除投毒样本，
+        返回清洗后的数据集和被移除样本记录。
+      operationId: clean_data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dataset
+                - remove_ids
+              properties:
+                dataset:
+                  type: array
+                  description: 原始数据集
+                  items:
+                    type: object
+                remove_ids:
+                  type: array
+                  description: 要移除的样本索引（0-based）
+                  items:
+                    type: integer
+      responses:
+        '200':
+          description: 清洗结果
+
+  /tools/verify:
+    post:
+      summary: 清洗后二次验证扫描
+      description: |
+        对清洗后的数据再次执行全量统计扫描，
+        确认无残留威胁。清洗后必须调用此工具确认。
+      operationId: verify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cleaned_data
+              properties:
+                cleaned_data:
+                  type: array
+                  description: 清洗后的数据集
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: 验证结果，含 status 字段（clean/dirty）

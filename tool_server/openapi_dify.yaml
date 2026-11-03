@@ -1,0 +1,344 @@
+openapi: 3.0.0
+info:
+  title: 净源哨兵 v6.0 Tool Server
+  description: |
+    净源哨兵 6.0 数据投毒智能检测工具服务。
+    提供 9 个工具供 Dify Agent 调用：
+    - 检测层(3): unicode-scan, embedding-scan, cross-sample
+    - 分析层(1): label-check
+    - 知识层(1): kb-search
+    - 手脚层(4): clean-data, quarantine, verify, generate-report
+
+    Agent自己做语义判断，工具只做Agent做不到的事。
+    数据流：/upload → 得到 session_id → 后续工具传 session_id
+  version: 6.0.0
+
+servers:
+  - url: http://host.docker.internal:5050
+    description: Docker内部访问工具服务器
+
+paths:
+  # ═══════════════════════════════════════════════════
+  # 数据接入层
+  # ═══════════════════════════════════════════════════
+
+  /health:
+    get:
+      summary: 健康检查
+      operationId: health_check
+      responses:
+        '200':
+          description: 服务正常
+
+  /upload:
+    post:
+      summary: 上传训练数据文件
+      description: 上传JSON/JSONL/CSV/TXT文件，自动解析并返回session_id
+      operationId: upload_file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: 上传成功，返回session_id和数据画像
+
+  /text:
+    post:
+      summary: 粘贴文本数据
+      description: 粘贴文本，自动按分隔符切分为多条
+      operationId: upload_text
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: 文本内容（多条用 --- 分隔）
+                separator:
+                  type: string
+                  default: "---"
+                label:
+                  type: string
+                  default: unknown
+      responses:
+        '200':
+          description: 解析成功，返回session_id和数据画像
+
+  /session/{session_id}:
+    get:
+      summary: 查看数据画像
+      operationId: get_session_info
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 数据画像（不返回原始数据）
+
+  # ═══════════════════════════════════════════════════
+  # 检测层 (3个工具)
+  # ═══════════════════════════════════════════════════
+
+  /tools/unicode-scan:
+    post:
+      summary: "[检测层] Unicode编码攻击深度扫描"
+      description: |
+        检测DeepSeek看不到的东西：零宽字符、同形异义字、Bidi控制符、
+        Base64/Hex/HTML实体编码、多层递归解码。
+      operationId: unicode_scan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+                  description: 数据集session_id
+                text:
+                  type: string
+                  description: 或直接传单条文本
+                options:
+                  type: object
+                  properties:
+                    deep_scan:
+                      type: boolean
+                      default: true
+                    max_decode_depth:
+                      type: integer
+                      default: 3
+      responses:
+        '200':
+          description: 风险分数+每项发现的具体证据
+
+  /tools/embedding-scan:
+    post:
+      summary: "[检测层] 语义聚类离群检测"
+      description: |
+        bge-m3全量嵌入→DBSCAN聚类→发现语义离群点。
+        DeepSeek做不到全量分布的数学计算。
+      operationId: embedding_scan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+                options:
+                  type: object
+                  properties:
+                    min_cluster_size:
+                      type: integer
+                      default: 5
+      responses:
+        '200':
+          description: 聚类结果+离群点列表+风险分数
+
+  /tools/cross-sample:
+    post:
+      summary: "[检测层] 跨样本攻击模板发现"
+      description: |
+        N-gram指纹→Jaccard相似度→图聚类→发现共谋攻击模板。
+        DeepSeek一次只能看几条，无法跨500条比对。
+      operationId: cross_sample
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+                options:
+                  type: object
+                  properties:
+                    similarity_threshold:
+                      type: number
+                      default: 0.6
+                    min_cluster_size:
+                      type: integer
+                      default: 3
+      responses:
+        '200':
+          description: 攻击模板群+共享N-gram签名
+
+  # ═══════════════════════════════════════════════════
+  # 知识层 (1个工具)
+  # ═══════════════════════════════════════════════════
+
+  /tools/label-check:
+    post:
+      summary: "[分析] 标签一致性检测"
+      description: 检测内容与标签矛盾（情感/主题/长度/关键词四维）。需数据含label字段。
+      operationId: label_check
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+      responses:
+        '200':
+          description: 不一致列表+风险分数
+
+  /tools/kb-search:
+    post:
+      summary: "[知识层] RAG知识库检索"
+      description: |
+        检索MITRE ATLAS攻击矩阵、真实案例、法规标准。
+        解决大模型在安全领域的幻觉问题。
+      operationId: kb_search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: 搜索查询
+                top_k:
+                  type: integer
+                  default: 5
+                filters:
+                  type: object
+                  properties:
+                    attack_type:
+                      type: string
+      responses:
+        '200':
+          description: 知识库匹配结果+ATLAS ID+来源引用
+
+  # ═══════════════════════════════════════════════════
+  # 手脚层 (4个工具)
+  # ═══════════════════════════════════════════════════
+
+  /tools/clean-data:
+    post:
+      summary: "[手脚层] 自动剔除投毒样本"
+      description: |
+        真的从数据集中删除确认有毒的样本。
+        记录备份+剔除原因，支持撤销。
+      operationId: clean_data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+                remove_indices:
+                  type: array
+                  items:
+                    type: integer
+                reasons:
+                  type: object
+                  description: "{索引: 剔除原因}"
+      responses:
+        '200':
+          description: 剔除结果+备份ID+剩余数据
+
+  /tools/quarantine:
+    post:
+      summary: "[手脚层] 隔离存疑样本"
+      description: |
+        对不确定的样本隔离待审，不直接删除。
+        标记详细理由，推送给人工复核。
+      operationId: quarantine_data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+                quarantine_indices:
+                  type: array
+                  items:
+                    type: integer
+                reasons:
+                  type: object
+      responses:
+        '200':
+          description: 隔离结果+待审列表
+
+  /tools/verify:
+    post:
+      summary: "[手脚层] 清洗后验证"
+      description: |
+        三层验证：
+        1. 完整性检查（该删的删了没）
+        2. 残留检测（剩余数据重新快速扫描）
+        3. 分布健康（标签/长度分布是否异常）
+      operationId: verify_clean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+                removed_indices:
+                  type: array
+                  items:
+                    type: integer
+                original_stats:
+                  type: object
+      responses:
+        '200':
+          description: clean/dirty/warning + 验证详情
+
+  /tools/generate-report:
+    post:
+      summary: "[手脚层] 生成审计报告"
+      description: |
+        生成包含完整证据链的审计报告：
+        执行摘要→数据画像→逐层检测详情→处置记录→验证结果→合规依据
+      operationId: generate_report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+                detection_results:
+                  type: object
+                  description: 各工具检测结果的汇总
+                format:
+                  type: string
+                  enum: [markdown, json]
+                  default: markdown
+      responses:
+        '200':
+          description: 审计报告

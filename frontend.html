@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>净源哨兵 v6.2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'PingFang SC','Microsoft YaHei',"Hiragino Sans GB",sans-serif;background:linear-gradient(180deg,#f8f9fb 0%,#eef3fc 60%,#dce8fa 100%);color:#1a1a2e;min-height:100vh;background-attachment:fixed}
+.tab{color:#8b9db5}.tab.active{border-bottom-color:#1e5bbf;color:#1e5bbf;font-weight:600}
+.header{background:linear-gradient(180deg,#dce8fa 0%,#eef3fc 30%,#f8f9fb 100%);padding:14px 32px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.header .logo{font-size:22px}.header .title{font-size:17px;font-weight:700;color:#1a3a5c}.header .ver{font-size:12px;color:#5a7a9a}
+.container{max-width:700px;margin:0 auto;padding:24px 16px}
+.container-wide{max-width:100%;padding:0 24px}
+.card{background:#fff;border:1px solid #e4eaf0;border-radius:10px;padding:24px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.card h2{font-size:17px;margin-bottom:12px}
+.upload-area{border:2px dashed #d0d0d0;border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-area:hover{border-color:#1a1a2e;background:#f8f9ff;transform:scale(1.01)}
+.upload-area.drag{border-color:#2d3561;background:#eef0ff}
+.upload-area input{display:none}
+.upload-area .icon{font-size:36px;margin-bottom:8px}
+.upload-area p{color:#aaa;font-size:14px}.upload-area .hint{color:#777;font-size:12px;margin-top:4px}
+.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#bbb;font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;border-bottom:1px solid #e8e8e8}
+textarea{width:100%;border:1px solid #d0d0d0;border-radius:8px;padding:12px;font-size:13px;resize:vertical;font-family:inherit;line-height:1.6}
+textarea{background:#fff;color:#1a1a2e;border:1px solid #dce4ec}textarea:focus{outline:none;border-color:#1e5bbf;box-shadow:0 0 0 3px rgba(30,91,191,.06)}
+.btn{display:block;width:100%;padding:13px;background:linear-gradient(135deg,#1e5bbf,#3480e8);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:12px;transition:all .2s;box-shadow:0 2px 8px rgba(30,91,191,.2)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(30,91,191,.3)}.btn:active{transform:scale(.98);background:linear-gradient(135deg,#194ea8,#2d72d6)}.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.steps{margin-top:16px}.step{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px}
+.step .dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.step .dot.done{background:#e8f5e9;color:#4CAF50}.step .dot.active{background:#e3f2fd;color:#2196F3}.step .dot.wait{background:#f5f5f5;color:#ccc}
+.step .info{flex:1;color:#666}.step .detail{font-size:12px;color:#999}
+.result-cards{display:flex;gap:12px}.result-cards>div{flex:1;padding:18px;border-radius:10px;text-align:center;color:#fff}
+.result-cards .num{font-size:32px;font-weight:700}.result-cards .lbl{font-size:13px;margin-top:4px}
+.dl-btn{display:block;text-align:center;padding:12px;background:#4CAF50;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;margin-top:16px;font-size:14px}
+.tabs{display:flex;gap:0;margin-bottom:0}.tab{padding:10px 20px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent;color:#888;background:none;border-top:none;border-left:none;border-right:none}
+.tab.active{border-bottom-color:#1a1a2e;color:#1a1a2e;font-weight:600}
+.tab-content{display:none}.tab-content.active{display:block}
+#reportFrame{width:100%;height:88vh;border:none;border-radius:8px}
+.history-table{width:100%;border-collapse:collapse;font-size:13px}
+.history-table th{text-align:left;padding:10px;background:#f5f5f5;font-weight:600}
+.history-table td{padding:10px;border-bottom:1px solid #f0f0f0}
+.empty{text-align:center;color:#999;padding:40px;font-size:14px}
+.isolate-actions{display:flex;gap:6px}.isolate-actions button{padding:4px 12px;border-radius:4px;border:1px solid #ddd;cursor:pointer;font-size:12px;font-weight:600}.btn-remove,.btn-pass{padding:5px 14px!important;border-radius:20px!important;font-size:11px!important;font-weight:600!important;cursor:pointer!important;transition:all .15s!important;background:#fff!important;color:#333!important;border:1px solid #ddd!important}
+.btn-remove:hover{border-color:#ff4757!important;color:#ff4757!important}.btn-pass:hover{border-color:#2ed573!important;color:#2ed573!important}
+</style></head><body>
+
+<div class="header"><span class="logo">🛡️</span><span class="title">净源哨兵</span><span class="ver">v6.2 · AI 训练数据安全智能体</span><span style="margin-left:auto;font-size:12px;color:#fff;cursor:pointer;border:none;padding:5px 14px;border-radius:6px;background:linear-gradient(135deg,#e74c3c,#c0392b);transition:all .2s;box-shadow:0 2px 6px rgba(231,76,60,.3)" id="clearBtn" onclick="if(confirm('清除缓存数据？')){localStorage.clear();location.reload()}" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(231,76,60,.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 6px rgba(231,76,60,.3)'" onmousedown="this.style.transform='scale(.96)';this.style.background='linear-gradient(135deg,#c0392b,#a93226)'" onmouseup="this.style.transform='';this.style.background='linear-gradient(135deg,#e74c3c,#c0392b)'">🗑 清除缓存</span></div>
+
+<div class="container">
+
+  <div class="tabs" id="tabBar" style="display:flex;align-items:center">
+    <button class="tab active" data-tab="detect">📤 数据检测</button>
+    <button class="tab" data-tab="report">📋 检测报告</button>
+    <button class="tab" data-tab="chain">💭 推理链</button>
+    <button class="tab" data-tab="kb">📚 知识库</button>
+    <span id="fileLabel" style="margin-left:auto;font-size:14px;color:#333;font-weight:600;padding:10px 0"></span>
+  </div>
+
+  <div class="tab-content active" id="detect">
+    <div class="card" id="uploadCard">
+      <div class="upload-area" id="dropZone">
+        <div class="icon">📁</div><p>点击上传 或拖拽文件到此处</p><p class="hint">JSONL / JSON / CSV / TXT / Excel(.xlsx)</p>
+        <input type="file" id="fileInput" accept=".jsonl,.json,.csv,.txt,.xlsx">
+      </div>
+      <div class="divider">或者</div>
+      <textarea id="textInput" rows="4" placeholder="已选文件时：此处写检测指令（如：重点排查编码攻击）；未选文件时：粘贴要检测的文本（多条用 --- 分隔）"></textarea>
+      <button class="btn" id="startBtn" onclick="run()">🚀 开始检测</button>
+      <div id="fileName" style="font-size:12px;color:#999;margin-top:8px"></div>
+    </div>
+    <div id="progressArea" style="display:none"></div>
+    <div id="resultArea" style="display:none"></div>
+  </div>
+
+  <div class="tab-content" id="report" style="position:absolute;left:0;right:0;top:110px;bottom:0">
+    <iframe id="reportFrame" style="width:100%;height:100%;border:none"></iframe>
+    <div id="reportDl" style="position:absolute;bottom:0;left:0;right:0;text-align:center;padding:8px 0;background:#fff;border-top:1px solid #dce4ec"></div>
+  </div>
+
+  <div class="tab-content" id="chain">
+    <div class="card" style="padding-top:12px"><div id="chainContent" class="empty">运行检测后在此查看 Agent 推理过程</div></div>
+  </div>
+
+</div>
+
+<script>
+const TOOL='http://127.0.0.1:5050',DIFY='http://localhost/v1/chat-messages',KEY=localStorage.getItem('jysb_key')||'YOUR_DIFY_API_KEY';
+
+const container=document.querySelector('.container');
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+  document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+  document.getElementById(name).classList.add('active');
+  if(name==='report')container.classList.add('container-wide');
+  else container.classList.remove('container-wide');
+  localStorage.setItem('jysb_tab',name);
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
+
+const dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput');
+dz.onclick=()=>fi.click();
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('drag')};
+dz.ondragleave=()=>dz.classList.remove('drag');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files.length){fi.files=e.dataTransfer.files;showFile(e.dataTransfer.files[0])}};
+fi.onchange=()=>{if(fi.files.length)showFile(fi.files[0])};
+function showFile(f){document.getElementById('fileName').innerHTML='已选择: '+f.name+' <a href="#" onclick="clearFile()" style="color:#F44336;font-size:12px;margin-left:8px">✕ 移除</a>'}
+function clearFile(){fi.value='';document.getElementById('fileName').textContent='';}
+
+let _texts=[],_sid=null,_data=null,_elapsed=0,_resolved={},_cot='',_fname='',_rawItems=[],_srcExt='',_txtMode='',_instr='';
+window.addEventListener('message',e=>{if(e.data&&e.data.type==='isolate')resolveIsolate(e.data.idx,e.data.action);});
+
+function resolveIsolate(idx,action){
+  if(action==='clear'){delete _resolved[idx]}
+  else _resolved[idx]=action;
+  const cache=localStorage.getItem('jysb_report');
+  if(cache){try{const c=JSON.parse(cache);c.resolved=_resolved;localStorage.setItem('jysb_report',JSON.stringify(c))}catch(e){}}
+  refreshResult();
+  const frame=document.getElementById('reportFrame');
+  if(frame&&frame.contentWindow){
+    const d=_data,n=_texts.length;
+    const rm=d.removed||[],il=d.isolated||[];
+    const rr=Object.values(_resolved).filter(v=>v==='remove').length;
+    const rp=Object.values(_resolved).filter(v=>v==='pass').length;
+    frame.contentWindow.postMessage({type:'updateDisposition',removed:rm.length+rr,isolated:il.length-rr-rp},'*');
+  }
+}
+
+function cleanedItems(){
+  const d=_data||{},rs=new Set((d.removed||[]).map(r=>r.index));
+  for(const[k,v]of Object.entries(_resolved)){if(v==='remove')rs.add(parseInt(k))}
+  (d.isolated||[]).forEach(r=>{if(!_resolved[r.index])rs.add(r.index)})
+  return (_rawItems.length?_rawItems:_texts.map(t=>({text:t,label:'unknown'}))).filter((_,i)=>!rs.has(i));
+}
+function buildCleanDownload(){
+  if(!_texts.length)return '';
+  const d=_data||{},items=cleanedItems();
+  const ext=_srcExt||'jsonl';
+  const cl=(d.removed||[]).length+Object.values(_resolved).filter(v=>v==='remove').length;
+  const qu=(d.isolated||[]).length-Object.keys(_resolved).length;
+  const sf=_texts.length-cl-qu;
+  if(ext==='xlsx'){return `<a class="dl-btn" href="#" onclick="exportXlsx(event)">⬇ 下载清洗数据（${sf}条 · Excel）</a>`}
+  const name=(_fname&&_fname!=='粘贴文本'?_fname.replace(/\.[^.]+$/,''):'cleaned_data')+'（已清洗）.'+ext;
+  const hasLabel=items.some(o=>o.label&&o.label!=='unknown');
+  const esc=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  let clean;
+  if(ext==='csv'){clean='text'+(hasLabel?',label':'')+'\n'+items.map(o=>esc(o.text)+(hasLabel?','+esc(o.label&&o.label!=='unknown'?o.label:''):'')).join('\n')}
+  else if(ext==='txt'){clean=items.map(o=>o.text).join(_txtMode==='dash'?'\n---\n':'\n')}
+  else if(ext==='json'){clean=JSON.stringify(items.map(o=>o.label&&o.label!=='unknown'?{text:o.text,label:o.label}:{text:o.text}),null,2)}
+  else{clean=items.map(o=>o.label&&o.label!=='unknown'?JSON.stringify({text:o.text,label:o.label}):JSON.stringify({text:o.text})).join('\n')}
+  return `<a class="dl-btn" href="data:application/jsonl;base64,${btoa(unescape(encodeURIComponent(clean)))}" download="${name}">⬇ 下载清洗数据（${sf}条）</a>`;
+}
+window.exportXlsx=async function(ev){
+  if(ev)ev.preventDefault();
+  const items=cleanedItems();
+  const name=(_fname&&_fname!=='粘贴文本'?_fname.replace(/\.[^.]+$/,''):'cleaned_data')+'（已清洗）.xlsx';
+  try{
+    const resp=await fetch(TOOL+'/export/xlsx',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,filename:name})});
+    if(!resp.ok){let detail='';try{const j=await resp.json();detail=j.detail||''}catch(e){}alert('导出失败：'+(detail||resp.status));return}
+    const blob=await resp.blob();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download=name;
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+  }catch(e){alert('导出失败，请确认工具服务器已启动')}
+};
+
+function refreshResult(){
+  if(!_data)return;
+  const d=_data,n=_texts.length;
+  const cl=(d.removed||[]).length+Object.values(_resolved).filter(v=>v==='remove').length;
+  const qu=(d.isolated||[]).length-Object.keys(_resolved).length;
+  const sf=n-cl-qu;
+  const dl=buildCleanDownload();
+  const el=document.getElementById('resultArea').querySelector('.card');
+  if(el){
+    el.querySelector('h2').innerHTML=`📊 检测结果 <span style="font-size:12px;color:#888;margin-left:12px">${_fname||'粘贴文本'} · ⏱ ${Math.round(_elapsed)}秒 · 📋 ${n}条样本</span>`;
+    el.querySelector('.result-cards').innerHTML=`<div style="background:#F44336"><div class="num">${cl}</div><div class="lbl">🚨 已剔除</div></div><div style="background:#FF9800"><div class="num">${qu}</div><div class="lbl">⚠️ 已隔离</div></div><div style="background:#4CAF50"><div class="num">${sf}</div><div class="lbl">✅ 安全</div></div>`;
+  }
+  document.getElementById('reportDl').innerHTML=dl;
+}
+
+async function callAgent(batchTexts,offset,sid){
+  const smp=batchTexts.map((t,i)=>`[${offset+i}] ${t}`).join('\n');
+  const th=sid?`同时调unicode-scan(${sid})查编码盲区、embedding-scan(${sid})查全量语义分布离群。`:'';
+  const hasLabel=smp.includes('label=');
+  const inst=_instr?`用户指令：${_instr}。请按此指令调整检测重点与处置方式。`:'';
+  const q=`检测以下文本，逐条判定。${th}${hasLabel?'文本含label字段，调label-check查标签矛盾。':''}${inst}\n\n${smp}\n\n按输出格式输出JSON。`;
+  const resp=await fetch(DIFY,{method:'POST',headers:{'Authorization':'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({inputs:{},query:q,response_mode:'streaming',user:'web'})});
+  const reader=resp.body.getReader(),decoder=new TextDecoder();
+  let ans='',buf='';
+  while(true){const{value,done}=await reader.read();if(done)break;
+    buf+=decoder.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+    for(const ln of lines){if(!ln.trim()||!ln.startsWith('data: '))continue;try{const ev=JSON.parse(ln.slice(6));if(ev.event==='message')ans+=ev.answer||'';}catch(e){}}
+  }
+  return parseJSON(ans);
+}
+
+function parseJSON(text){
+  let m=text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+  if(!m)m=text.match(/\{[\s\S]*"removed"[\s\S]*\}/);
+  if(m){try{return JSON.parse(m[1]||m[0])}catch(e){try{return JSON.parse(m[0])}catch(e){}}}
+  return null;
+}
+
+function mergeResults(results,total){
+  let allRemoved=[],allIsolated=[],allDet={encoding:'',semantic:'',knowledge:''},allDisp={},safeCount=0;
+  for(const d of results){
+    if(!d)continue;
+    if(d.removed)allRemoved.push(...d.removed);
+    if(d.isolated)allIsolated.push(...d.isolated);
+    if(d.safe_count!==undefined)safeCount+=d.safe_count;
+    if(d.detection){if(d.detection.encoding&&!allDet.encoding)allDet.encoding=d.detection.encoding;if(d.detection.semantic&&!allDet.semantic)allDet.semantic=d.detection.semantic;if(d.detection.knowledge)allDet.knowledge=(allDet.knowledge?allDet.knowledge+' | ':'')+d.detection.knowledge}
+    if(d.disposition)allDisp=d.disposition;
+  }
+  return {removed:allRemoved,isolated:allIsolated,safe_count:safeCount||(total-allRemoved.length-allIsolated.length),detection:allDet,disposition:allDisp};
+}
+
+async function run(){
+  const btn=document.getElementById('startBtn'),progressArea=document.getElementById('progressArea'),resultArea=document.getElementById('resultArea'),uploadCard=document.getElementById('uploadCard');
+  btn.disabled=true;btn.textContent='检测中...';_resolved={};_cot='';
+  progressArea.style.display='block';resultArea.style.display='none';uploadCard.style.display='none';
+
+  updateSteps([{s:'active',n:'读取数据',d:''},{s:'wait',n:'语义扫描',d:''},{s:'wait',n:'工具验证',d:''},{s:'wait',n:'生成报告',d:''}]);
+  const file=fi.files[0],text=document.getElementById('textInput').value.trim();
+  if(!file&&!text){alert('请上传文件或粘贴文本');btn.disabled=false;btn.textContent='🚀 开始检测';uploadCard.style.display='block';progressArea.style.display='none';return}
+  fi.value='';document.getElementById('textInput').value='';document.getElementById('fileName').textContent='';
+
+  let ts=[],sid=null;
+  _instr=file?text:'';
+  if(file){_fname=file.name;document.getElementById('fileLabel').textContent='当前检测文件：'+file.name;const fd=new FormData();fd.append('file',file);let r;try{r=await fetch(TOOL+'/upload',{method:'POST',body:fd}).then(r=>r.json())}catch(e){alert('连接工具服务器失败，请确认 server.py 已启动');btn.disabled=false;btn.textContent='🚀 开始检测';uploadCard.style.display='block';return}if(!r||!r.dataset){alert('上传解析失败：'+((r&&(r.detail||r.message))||'服务端未返回数据'));btn.disabled=false;btn.textContent='🚀 开始检测';uploadCard.style.display='block';return}ts=r.dataset.map(o=>o.label&&o.label!=='unknown'?`label=${o.label} | ${o.text}`:(o.text||''));sid=r.session_id;_rawItems=r.dataset;const ext=(file.name.split('.').pop()||'').toLowerCase();_srcExt=['csv','txt','json','jsonl','xlsx'].includes(ext)?ext:'jsonl';_txtMode=r.split_mode||''}
+  else if(text){_fname='粘贴文本';document.getElementById('fileLabel').textContent='当前检测文件：粘贴文本';ts=text.split('---').map(s=>s.trim()).filter(s=>s);const r=await fetch(TOOL+'/text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,separator:'---'})}).then(r=>r.json());sid=r.session_id;_rawItems=ts.map(t=>({text:t,label:'unknown'}));_srcExt='jsonl';_txtMode=''}
+  _texts=ts;_sid=sid;
+  const total=ts.length,BATCH=50,batches=Math.ceil(total/BATCH);
+  updateSteps([{s:'done',n:'读取数据',d:'共 '+total+' 条 · '+batches+' 批'},{s:'active',n:'语义扫描',d:batches>1?'第1/'+batches+'批':'Agent 逐条阅读'},{s:'wait',n:'工具验证',d:''},{s:'wait',n:'生成报告',d:''}]);
+
+  const t0=Date.now(),allResults=[];
+  for(let b=0;b<batches;b++){
+    const start=b*BATCH,end=Math.min(start+BATCH,total);
+    if(batches>1)updateSteps([{s:'done',n:'读取数据',d:'共 '+total+' 条'},{s:'active',n:'语义扫描',d:`第${b+1}/${batches}批 (${start+1}-${end})`},{s:'wait',n:'工具验证',d:''},{s:'wait',n:'生成报告',d:''}]);
+    const d=await callAgent(ts.slice(start,end),start,sid);
+    allResults.push(d);
+    if(batches>1&&b<batches-1){updateSteps([{s:'done',n:'读取数据',d:'共 '+total+' 条'},{s:'done',n:'语义扫描',d:`第${b+1}/${batches}批完成`},{s:'active',n:'工具验证',d:''},{s:'wait',n:'生成报告',d:''}]);await new Promise(r=>setTimeout(r,2000))}
+  }
+
+  _data=mergeResults(allResults,total);
+  _elapsed=(Date.now()-t0)/1000;
+  updateSteps([{s:'done',n:'读取数据',d:'共 '+total+' 条'},{s:'done',n:'语义扫描',d:''},{s:'done',n:'工具验证',d:''},{s:'done',n:'生成报告',d:'✅ 完成 · '+Math.round(_elapsed)+'秒'}]);
+  showResult();
+  btn.disabled=false;btn.textContent='🚀 开始检测';uploadCard.style.display='block';
+  document.getElementById('textInput').value='';clearFile();
+  localStorage.setItem('jysb_report',JSON.stringify({data:_data,texts:_texts,elapsed:_elapsed,n:total,rawItems:_rawItems,srcExt:_srcExt,txtMode:_txtMode}));
+  if(_fname)localStorage.setItem('jysb_fname',_fname);
+}
+
+function updateSteps(arr){document.getElementById('progressArea').innerHTML='<div class="card">'+arr.map(s=>`<div class="step"><span class="dot ${s.s==='done'?'done':s.s==='active'?'active':'wait'}">${s.s==='done'?'✓':s.s==='active'?'●':'○'}</span><span class="info" style="color:${s.s==='wait'?'#ccc':'#333'}">${s.n}</span><span class="detail">${s.d}</span></div>`).join('')+'</div>';}
+
+function buildChain(d){
+  const cc=document.getElementById('chainContent');
+  if(!d){cc.innerHTML='<div class="empty">等待检测</div>';return}
+  let chain='';const all=[...(d.removed||[]),...(d.isolated||[])];
+  all.forEach(r=>{let body=(r.reasoning||r.reason||'').replace(/①/g,'<br>①').replace(/②/g,'<br>②').replace(/③/g,'<br>③').replace(/④/g,'<br>④');chain+=`\n<div style="margin-top:0;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #eee">\n  <strong style="font-size:14px;color:#1a1a2e">🔍 样本 #${(r.index||0)+1} — ${r.type||'待定'}</strong>\n  <div style="font-size:13px;color:#555;line-height:2;margin-top:6px;text-align:left;padding-left:8px">${body}</div>\n</div>`});
+  cc.innerHTML=chain||'<div class="empty">本次检测未生成推理链<br><small style="color:#999">请确认 Dify System Prompt 已更新为含 reasoning 字段的版本</small></div>';
+}
+
+function showResult(){
+  const d=_data||{},n=_texts.length,cl=(d.removed||[]).length,qu=(d.isolated||[]).length,sf=n-cl-qu;
+  const dl=(_texts.length&&d.removed)?buildCleanDownload():'';
+  document.getElementById('resultArea').style.display='block';
+  document.getElementById('resultArea').innerHTML=`<div class="card"><h2>📊 检测结果 <span style="font-size:12px;color:#888;margin-left:12px">${_fname||'粘贴文本'} · ⏱ ${Math.round(_elapsed)}秒 · 📋 ${n}条样本</span></h2><div class="result-cards"><div style="background:#F44336"><div class="num">${cl}</div><div class="lbl">🚨 已剔除</div></div><div style="background:#FF9800"><div class="num">${qu}</div><div class="lbl">⚠️ 已隔离</div></div><div style="background:#4CAF50"><div class="num">${sf}</div><div class="lbl">✅ 安全</div></div></div></div>`;
+  document.getElementById('reportFrame').srcdoc=buildReport(d,n);
+  document.getElementById('reportDl').innerHTML=dl;
+  buildChain(d);
+}
+
+function buildReport(d,n){
+  const CSS="body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;margin:20px 24px;background:#fff;padding-bottom:60px}.row-2,.row-3{display:flex;gap:12px;margin:0 0 12px}.row-2>div{flex:1}.row-3>div{flex:1;min-width:0}.card{border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}.card-head{padding:9px 12px;font-size:14px;font-weight:600;border-bottom:1px solid #e0e0e0;background:#fafafa;flex-shrink:0;display:flex;align-items:center}.scroll{max-height:340px;overflow-y:auto;flex:1}.scroll table{width:100%;border-collapse:collapse;font-size:12px}.scroll thead{position:sticky;top:0;z-index:1}.scroll th{background:#f5f5f5;padding:7px 8px;text-align:left;font-weight:600;border-bottom:1px solid #ddd;white-space:nowrap;font-size:11px}.scroll td{padding:7px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top;line-height:1.4}.text-preview{cursor:pointer;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.text-full{display:none;margin-top:4px;padding:6px;background:#f9f9f9;border-radius:3px;font-size:11px;color:#555;word-break:break-all}.toggle{display:none}.toggle:checked~.text-full{display:block}.toggle:checked~.text-preview{display:none}.toggle:checked~.lbl::after{content:'收起 ▲'}.lbl{color:#999;font-size:10px;cursor:pointer;display:block;margin-top:2px}.lbl::after{content:'展开全文 ▼'}.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;margin:1px}.badge-red{background:#FEE;color:#C00}.info-table{width:100%;border-collapse:collapse;font-size:12px}.info-table th{background:#f5f5f5;padding:7px 10px;text-align:left;font-weight:600;border-bottom:1px solid #ddd}.info-table td{padding:7px 10px;border-bottom:1px solid #eee}.placeholder{padding:40px 20px;text-align:center;color:#999;font-size:13px}.placeholder-safe{padding:40px 20px;text-align:center;color:#4CAF50;font-size:14px}.btn-remove,.btn-pass{padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;background:#fff;color:#333;border:1px solid #ddd}.btn-remove:hover{border-color:#ff4757;color:#ff4757}.btn-pass:hover{border-color:#2ed573;color:#2ed573}";
+  if(!d)return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${CSS}</style></head><body><div class="row-2"><div class="card"><div class="card-head">🚨 剔除样本</div><div class="placeholder">等待检测</div></div><div class="card"><div class="card-head">⚠️ 隔离样本</div><div class="placeholder">等待检测</div></div></div></body></html>`;
+
+  const rm=d.removed||[],il=d.isolated||[];
+  // 域判定辅助
+  function domains(r){
+    const full=((r.reason||'')+' '+(r.evidence||'')+' '+(r.reasoning||''));
+    const seg=full.includes('④')?full.slice(full.indexOf('④')):full;
+    const type=r.type||'';
+    const sem='🟢';
+    const enc=/编码域|零宽|Bidi|同形/i.test(seg)?'🟢':'⚪';
+    let dist=/分布域|离群|聚类|cross.sample|模板/i.test(seg)?'🟢':'⚪';
+    let know=/知识域|ATLAS|AML\.T|知识库|kb-search/i.test(seg)?'🟢':'⚪';
+    if(dist==='⚪'&&/语料污染/.test(type))dist='🟢';
+    if(know==='⚪'&&enc==='⚪'&&/指令覆盖|DAN|系统覆盖|提示词窃取|身份劫持/.test(type))know='🟢';
+    return `${sem}语义域 ${enc}编码域<br>${dist}分布域 ${know}知识域`;
+  }
+  let rrows='';rm.forEach((r,i)=>{const tp=(r.type||'').split(/[+、,，]/).map(t=>t.trim()).filter(t=>t).map(t=>`<span class="badge badge-red">${t}</span>`).join('');rrows+=`<tr><td style="width:28px">${(r.index||0)+1}</td><td><input type="checkbox" class="toggle" id="r${i}"><label class="text-preview" for="r${i}">${(r.text||'').slice(0,80)}</label><div class="text-full">${r.text||''}</div><label class="lbl" for="r${i}"></label></td><td style="width:85px">${tp}</td><td style="width:80px;font-size:11px;text-align:center;white-space:nowrap">${domains(r)}</td><td style="font-size:11px">${r.reason||''}</td></tr>`});
+  const ih=il.length?`<div class="card"><div class="card-head">⚠️ 隔离样本（${il.length}条）— 待人工复核<span style="margin-left:auto;display:flex;gap:8px"><button onclick="var all=document.querySelectorAll('.iso-cb'),check=!Array.from(all).some(x=>x.checked);all.forEach(c=>c.checked=check)" style="padding:5px 16px;font-size:12px;background:#fff;color:#555;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-weight:600;transition:all .15s" onmouseover="this.style.borderColor='#aaa';this.style.boxShadow='0 2px 8px rgba(0,0,0,.1)'" onmouseout="this.style.borderColor='#ddd';this.style.boxShadow=''" onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform='scale(1)'">全选</button><button onclick="bulkReset()" style="padding:5px 16px;font-size:12px;background:#fff;color:#555;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-weight:600;transition:all .15s" onmouseover="this.style.borderColor='#aaa';this.style.boxShadow='0 2px 8px rgba(0,0,0,.1)'" onmouseout="this.style.borderColor='#ddd';this.style.boxShadow=''" onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform='scale(1)'">重置</button><button onclick="bulkResolve('remove')" style="padding:5px 16px;font-size:12px;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:600;transition:all .15s" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 2px 8px rgba(231,76,60,.4)'" onmouseout="this.style.transform='';this.style.boxShadow=''" onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform='scale(1.05)'">剔除</button><button onclick="bulkResolve('pass')" style="padding:5px 16px;font-size:12px;background:#27ae60;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:600;transition:all .15s" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 2px 8px rgba(39,174,96,.4)'" onmouseout="this.style.transform='';this.style.boxShadow=''" onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform='scale(1.05)'">放行</button></span></div><div class="scroll"><table><thead><tr><th style="width:24px"></th><th>#</th><th>文本摘要</th><th>隔离原因</th><th style="width:110px">处置</th></tr></thead><tbody>${il.map(r=>`<tr id="iso-row-${r.index}"><td><input type="checkbox" class="iso-cb" value="${r.index}" style="cursor:pointer"></td><td>${(r.index||0)+1}</td><td>${(r.text||'').slice(0,80)}</td><td style="font-size:11px">${r.reason||''}</td><td class="isolate-actions"><button class="btn-remove" onclick="resolve(${r.index},'remove',this)">剔除</button><button class="btn-pass" onclick="resolve(${r.index},'pass',this)">放行</button></td></tr>`).join('')}</tbody></table></div></div>`:'<div class="card"><div class="card-head">⚠️ 隔离样本</div><div class="placeholder">无</div></div>';
+  const resolvedRemoved=Object.values(_resolved).filter(v=>v==='remove').length,resolvedPassed=Object.values(_resolved).filter(v=>v==='pass').length;
+  const n_rm=rm.length,n_il=il.length,n_sf=d.safe_count||(n-n_rm-n_il),actual_rm=n_rm+resolvedRemoved,actual_il=n_il-resolvedRemoved-resolvedPassed,actual_sf=n_sf+resolvedPassed;
+  const det=d.detection||{},ATLAS={'指令覆盖':'AML.T0051','DAN越狱':'AML.T0051','系统覆盖':'AML.T0054','提示词窃取':'AML.T0056','提示词提取':'AML.T0056','身份劫持':'AML.T0051','角色劫持':'AML.T0051','后门':'AML.T0018','编码':'AML.T0043','供应链':'AML.T0010'};
+  let atlas=new Set();rm.forEach(r=>(r.type||'').split(/[+、,，]/).forEach(t=>{t=t.trim();for(const[k,v]of Object.entries(ATLAS))if(t.includes(k))atlas.add(v)}));
+  const atStr=[...atlas].sort().join('、')||'无匹配',kb=det.knowledge||'',fullKb=kb?`${kb} | ${atStr}`:atStr,disp=d.disposition||{};
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${CSS}</style></head><body>
+<${''}script>
+var _local=${JSON.stringify(_resolved||{})};
+function bulkReset(){
+  document.querySelectorAll('.iso-cb:checked').forEach(cb=>{
+    var idx=parseInt(cb.value);
+    delete _local[idx];
+    var row=document.getElementById('iso-row-'+idx);
+    if(row){var rb2=row.querySelector('.btn-remove'),pb2=row.querySelector('.btn-pass');if(rb2){rb2.style.background='#fff';rb2.style.color='#333';rb2.style.borderColor='#ddd'}if(pb2){pb2.style.background='#fff';pb2.style.color='#333';pb2.style.borderColor='#ddd'}}
+    window.top.postMessage({type:'isolate',idx:idx,action:'clear'},'*');
+  });
+}
+function bulkResolve(action){
+  document.querySelectorAll('.iso-cb:checked').forEach(cb=>{
+    var idx=parseInt(cb.value);
+    _local[idx]=action;
+    var row=document.getElementById('iso-row-'+idx);
+    if(row){var rb2=row.querySelector('.btn-remove'),pb2=row.querySelector('.btn-pass');if(rb2){rb2.style.background='#fff';rb2.style.color='#333';rb2.style.borderColor='#ddd'}if(pb2){pb2.style.background='#fff';pb2.style.color='#333';pb2.style.borderColor='#ddd'};
+      if(action==='remove'){const b=row.querySelector('.btn-remove');b.style.background='#fff';b.style.color='#ff4757';b.style.borderColor='#ff4757'}
+      else{const b=row.querySelector('.btn-pass');b.style.background='#fff';b.style.color='#2ed573';b.style.borderColor='#2ed573'}
+    }
+    window.top.postMessage({type:'isolate',idx:idx,action:action},'*');
+  });
+}
+function resolve(idx,action,btn){
+  var row=btn.parentElement,removeBtn=row.querySelector('.btn-remove'),passBtn=row.querySelector('.btn-pass');
+  if(_local[idx]===action){delete _local[idx];removeBtn.style.background='#fff';removeBtn.style.color='#333';removeBtn.style.borderColor='#ddd';removeBtn.style.opacity='1';passBtn.style.background='#fff';passBtn.style.color='#333';passBtn.style.borderColor='#ddd';passBtn.style.opacity='1';window.top.postMessage({type:'isolate',idx:idx,action:'clear'},'*')}
+  else{_local[idx]=action;if(action==='remove'){removeBtn.style.background='#fff';removeBtn.style.color='#ff4757';removeBtn.style.borderColor='#ff4757';removeBtn.style.opacity='1';passBtn.style.background='#fff';passBtn.style.color='#333';passBtn.style.borderColor='#ddd';passBtn.style.opacity='1'}else{passBtn.style.background='#fff';passBtn.style.color='#2ed573';passBtn.style.borderColor='#2ed573';passBtn.style.opacity='1';removeBtn.style.background='#fff';removeBtn.style.color='#333';removeBtn.style.borderColor='#ddd';removeBtn.style.opacity='1'}window.top.postMessage({type:'isolate',idx:idx,action:action},'*')}
+}
+window.addEventListener('message',function(e){if(e.data&&e.data.type==='updateDisposition'){var d=e.data,tables=document.querySelectorAll('.info-table'),t=tables[tables.length-1];if(t){var rows=t.querySelectorAll('tr');if(rows[1])rows[1].cells[1].textContent=d.removed+'条';if(rows[2]){rows[2].cells[1].textContent=d.isolated+'条';rows[2].cells[2].textContent=d.isolated>0?'⚠️ 待人工':'✅ 全部已复核'}}}});
+document.addEventListener('DOMContentLoaded',function(){for(var idx in _local){var row=document.getElementById('iso-row-'+idx);if(!row)continue;var rb=row.querySelector('.btn-remove'),pb=row.querySelector('.btn-pass');if(_local[idx]==='remove'){if(rb){rb.style.background='#fff';rb.style.color='#ff4757';rb.style.borderColor='#ff4757';rb.style.opacity='1'}}else if(_local[idx]==='pass'){if(pb){pb.style.background='#fff';pb.style.color='#2ed573';pb.style.borderColor='#2ed573';pb.style.opacity='1'}}}});
+</${''}script>
+<div class="row-2"><div class="card"><div class="card-head">🚨 剔除样本（${n_rm}条）</div><div class="scroll"><table><thead><tr><th>#</th><th>文本摘要</th><th>攻击类型</th><th>跨域确认</th><th>理由</th></tr></thead><tbody>${rrows}</tbody></table></div></div>${ih}</div>
+<div class="row-3">
+  <div class="card"><div class="card-head">✅ 安全样本</div><div class="placeholder-safe">${n_sf} 条安全<br>不展示详情</div></div>
+  <div class="card"><div class="card-head">🔍 检测依据</div><table class="info-table"><tr><td style="width:60px">编码层</td><td>${det.encoding||''}</td></tr><tr><td>语义层</td><td>${det.semantic||''}</td></tr><tr><td>知识库</td><td>${fullKb}</td></tr></table></div>
+  <div class="card"><div class="card-head">📋 处置记录</div><table class="info-table"><tr><th>操作</th><th>数量</th><th>状态</th></tr><tr><td>剔除</td><td>${actual_rm}条</td><td>✅ 已完成</td></tr><tr><td>隔离</td><td>${actual_il}条</td><td>${actual_il>0?'⚠️ 待人工':'✅ 全部已复核'}</td></tr><tr><td>验证</td><td>—</td><td>${disp.verified!==false?'✅ 通过':'⚠️ 待验证'}</td></tr></table></div>
+</div></body></html>`;
+}
+
+document.getElementById('reportFrame').srcdoc=buildReport(null);
+const savedName=localStorage.getItem('jysb_fname');if(savedName)document.getElementById('fileLabel').textContent='当前检测文件：'+savedName;
+// 知识库标签页——从服务端拉真实内容
+(function(){
+  var kbDiv=document.createElement('div');kbDiv.className='tab-content';kbDiv.id='kb';
+  kbDiv.innerHTML='<div class="card"><h3 style="margin-bottom:4px">📚 知识库总览</h3><p style="color:#999;font-size:12px;margin-bottom:12px" id="kbMeta">加载中...</p><div id="kbList"></div></div>';
+  document.querySelector('.container').appendChild(kbDiv);
+  fetch('http://127.0.0.1:5050/kb-files').then(r=>r.json()).then(data=>{
+    document.getElementById('kbMeta').textContent=data.files.length+'个模块 · 来源：MITRE ATLAS / 网信办 / arxiv / OWASP / NIST · Dify RAG已接入';
+    document.getElementById('kbList').innerHTML=data.files.map((f,i)=>`<div style="margin-bottom:10px;padding:10px 0;border-bottom:1px solid #eee"><strong style="cursor:pointer;color:#1e5bbf;font-size:14px" onclick="var d=document.getElementById('kb-d-${i}');d.style.display=d.style.display==='none'?'block':'none';this.textContent=this.textContent.replace('▸','▾').replace('▾','▸')">▸ ${f.title}</strong><br><span style="font-size:12px;color:#888">${f.desc}</span><div id="kb-d-${i}" style="display:none;margin-top:8px;padding:12px;background:#f8f9fb;border-radius:6px;font-size:12px;color:#555;line-height:1.8;white-space:pre-wrap;max-height:400px;overflow-y:auto">${f.content}</div></div>`).join('');
+  }).catch(e=>{document.getElementById('kbMeta').textContent='⚠️ 知识库服务未连接，请启动工具服务器'});
+})();
+try{(function(){const tab=localStorage.getItem('jysb_tab')||'detect',cache=localStorage.getItem('jysb_report');if(cache){try{const c=JSON.parse(cache);_data=c.data;_texts=c.texts;_elapsed=c.elapsed;_resolved=c.resolved||{};_rawItems=c.rawItems||[];_srcExt=c.srcExt||'';_txtMode=c.txtMode||'';document.getElementById('reportFrame').srcdoc=buildReport(c.data,c.n);refreshResult();buildChain(c.data)}catch(e){}}switchTab(tab)})()}catch(e){console.error('init error',e)}
+</script></body></html>

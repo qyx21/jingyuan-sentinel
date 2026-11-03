@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><title>按钮设计方案</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f4f8;padding:24px}
+h2{font-size:16px;margin:20px 0 10px;color:#333}
+h3{font-size:12px;color:#999;margin:4px 0 8px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.card{background:#fff;border:1px solid #e4eaf0;border-radius:10px;padding:18px;margin-bottom:14px}
+.btn{padding:5px 16px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;border-radius:4px}
+.rm{background:#e74c3c;color:#fff}.rm:hover{background:#c0392b;box-shadow:0 2px 6px rgba(231,76,60,.3)}
+.ps{background:#27ae60;color:#fff}.ps:hover{background:#219a52;box-shadow:0 2px 6px rgba(39,174,96,.3)}
+.rst{background:#fff;color:#555;border:1px solid #ddd}.rst:hover{border-color:#aaa;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+
+/* 方案1：圆角药丸 */
+.s1 .btn{border-radius:20px}
+
+/* 方案2：直角微圆 */
+.s2 .btn{background:transparent;border:2px solid}.s2 .rm{color:#e74c3c;border-color:#e74c3c}.s2 .rm:hover{background:#e74c3c;color:#fff;box-shadow:none}.s2 .ps{color:#27ae60;border-color:#27ae60}.s2 .ps:hover{background:#27ae60;color:#fff;box-shadow:none}.s2 .rst{color:#888;border-color:#ddd}.s2 .rst:hover{background:#f5f5f5;box-shadow:none}
+
+/* 方案3：暗黑风 */
+.s3{background:#1a1d28}.s3 h2{color:#ccc}.s3 h3{color:#666}.s3 .card{background:#242736;border-color:#333}.s3 .rm{background:#ff4757}.s3 .rm:hover{background:#ff6b81}.s3 .ps{background:#2ed573}.s3 .ps:hover{background:#7bed9f}.s3 .rst{background:transparent;color:#888;border-color:#444}.s3 .rst:hover{border-color:#888;color:#ccc}
+
+/* 方案4：小标签风 */
+.s4 .btn{padding:3px 10px;font-size:10px;letter-spacing:.5px;text-transform:uppercase}
+
+/* 方案5：扁平无边框 */
+.s5 .btn{border-radius:0}.s5 .rm{background:#d63031}.s5 .ps{background:#00b894}.s5 .rst{background:#dfe6e9;color:#636e72;border:none}.s5 .rst:hover{background:#b2bec3;color:#2d3436;box-shadow:none}
+
+/* 方案6：渐变 */
+.s6 .rm{background:linear-gradient(135deg,#e74c3c,#e53a3a)}.s6 .rm:hover{background:linear-gradient(135deg,#c0392b,#d32f2f)}.s6 .ps{background:linear-gradient(135deg,#27ae60,#00b894)}.s6 .ps:hover{background:linear-gradient(135deg,#219a52,#00a381)}.s6 .rst{background:linear-gradient(135deg,#f5f5f5,#e8e8e8);border-color:#ddd}.s6 .rst:hover{background:linear-gradient(135deg,#e8e8e8,#ddd)}
+</style></head><body>
+
+<h2>🎨 隔离区按钮设计方案</h2>
+<p style="color:#999;font-size:13px;margin-bottom:20px">每行：重置 | 剔除 | 放行（上面那三个）+ 每行单个按钮样式（下面）</p>
+
+<div class="card s1"><h2>方案1 · 圆角药丸（当前）</h2>
+  <h3>纯色填充 + hover阴影 + 圆角20px</h3>
+  <div class="row"><button class="btn rst">重置</button><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+</div>
+
+<div class="card s2"><h2>方案2 · 描边透明</h2>
+  <h3>透明底色 + 彩色边框，hover填充</h3>
+  <div class="row"><button class="btn rst">重置</button><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+</div>
+
+<div class="card s3"><h2>方案3 · 暗黑风</h2>
+  <h3>深色背景 + 亮色按钮，科技感</h3>
+  <div class="row"><button class="btn rst">重置</button><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+</div>
+
+<div class="card s4"><h2>方案4 · 小标签风</h2>
+  <h3>紧凑迷你，大写字母，极简</h3>
+  <div class="row"><button class="btn rst">重置</button><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+</div>
+
+<div class="card s5"><h2>方案5 · 扁平直角</h2>
+  <h3>无圆角，纯色块，利落</h3>
+  <div class="row"><button class="btn rst">重置</button><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+</div>
+
+<div class="card s6"><h2>方案6 · 微渐变</h2>
+  <h3>细微渐变，更有质感</h3>
+  <div class="row"><button class="btn rst">重置</button><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn rm">剔除</button><button class="btn ps">放行</button></div>
+</div>
+
+</body></html>

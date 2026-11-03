@@ -1,0 +1,6 @@
+text,label
+"这是一段非常长的文本
+它跨了三行
+但仍然只是同一条记录",positive
+第二条评论,negative
+第三条评论,positive
